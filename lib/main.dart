@@ -34,10 +34,16 @@ class _FoodPageState extends State<FoodPage> {
   bool isAscending = true;
   String searchText = '';
   List<Food> foodList = [
-    Food('Karedok Bandung', 12000, 4.8, 1000, 'images/karedok.jpg'),
-    Food('Nasi Goreng', 15000, 4.5, 2000, 'images/nasi_goreng.jpg'),
-    Food('Sate Ayam', 20000, 4.7, 1500, 'images/sate_ayam.jpg'),
-    // Tambahkan data lainnya di sini
+    Food('Ayam Bakar', 22000, 4.7, 420, 'images/ayam_bakar.jpg'),
+    Food('Ayam Penyet', 23000, 4.5, 314, 'images/ayam_cabe_ijo.jpg'),
+    Food('Ayam Geprek', 22000, 4.8, 98, 'images/ayam_geprek.jpg'),
+    Food('Bakso', 15000, 4.7, 570, 'images/bakso.jpg'),
+    Food('Es Teh Manis', 6000, 4.9, 900, 'images/es_teh_manis.jpg'),
+    Food('Ikan Bakar', 23000, 4.0, 230, 'images/ikan_bakar.jpg'),
+    Food('Jus Alpukat', 12000, 4.6, 490, 'images/jus_alpukat.jpg'),
+    Food('Jus Jeruk', 10000, 4.7, 890, 'images/jus_jeruk.jpg'),
+    Food('Kopi', 6000, 4.9, 1300, 'images/kopi.jpeg'),
+    Food('Nasi Goreng', 14000, 4.8, 1400, 'images/nasi_goreng.jpg'),
   ];
 
   List<Food> filteredFoodList = [];
@@ -58,7 +64,7 @@ class _FoodPageState extends State<FoodPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.blueGrey,
         centerTitle: true,
         title: const Text(
           'DAFTAR MENU',
@@ -137,13 +143,21 @@ class _FoodPageState extends State<FoodPage> {
           ),
           const SizedBox(height: 8.0),
           Column(
-            children:
-                filteredFoodList.map((food) => FoodCard(food: food)).toList(),
+            children: filteredFoodList.asMap().entries.map((entry) {
+              int index = entry.key;
+              Food food = entry.value;
+              return FoodCard(
+                food: food,
+                index: index,
+                onEditPrice: editFoodPrice,
+                onRemove: removeFood,
+              );
+            }).toList(),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.blueGrey,
         foregroundColor: Colors.white,
         onPressed: () {
           _showAddFoodDialog(context);
@@ -230,6 +244,20 @@ class _FoodPageState extends State<FoodPage> {
     });
   }
 
+  void editFoodPrice(int index, int newPrice) {
+    setState(() {
+      foodList[index].price = newPrice;
+      searchFoodList(); // Refresh the filtered list
+    });
+  }
+
+  void removeFood(int index) {
+    setState(() {
+      foodList.removeAt(index);
+      searchFoodList(); // Refresh the filtered list
+    });
+  }
+
   void _showAddFoodDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -298,19 +326,27 @@ class _FoodPageState extends State<FoodPage> {
 }
 
 class Food {
-  final String name;
-  final int price;
-  final double rating;
-  final int purchases;
-  final String imageUrl;
+  String name;
+  int price;
+  double rating;
+  int purchases;
+  String imageUrl;
 
   Food(this.name, this.price, this.rating, this.purchases, this.imageUrl);
 }
 
 class FoodCard extends StatelessWidget {
   final Food food;
+  final int index;
+  final Function(int, int) onEditPrice;
+  final Function(int) onRemove;
 
-  const FoodCard({required this.food});
+  const FoodCard({
+    required this.food,
+    required this.index,
+    required this.onEditPrice,
+    required this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -324,56 +360,104 @@ class FoodCard extends StatelessWidget {
             fit: BoxFit.cover,
           ),
           const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                food.name,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(
-                height: 6.0,
-              ),
-              Text('Rp. ${food.price}'),
-              const SizedBox(
-                height: 6.0,
-              ),
-              Row(
-                children: [
-                  Row(
-                    children: <Widget>[
-                      const Icon(
-                        Icons.star,
-                        size: 18.0,
-                      ),
-                      const SizedBox(
-                        width: 4.0,
-                      ),
-                      Text('${food.rating}'),
-                    ],
-                  ),
-                  const SizedBox(
-                    width: 12.0,
-                  ),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.shopping_bag,
-                        size: 16.0,
-                      ),
-                      const SizedBox(
-                        width: 4.0,
-                      ),
-                      Text('${food.purchases}'),
-                    ],
-                  ),
-                ],
-              )
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  food.name,
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(
+                  height: 6.0,
+                ),
+                Text('Rp. ${food.price}'),
+                const SizedBox(
+                  height: 6.0,
+                ),
+                Row(
+                  children: [
+                    Row(
+                      children: <Widget>[
+                        const Icon(
+                          Icons.star,
+                          size: 18.0,
+                        ),
+                        const SizedBox(
+                          width: 4.0,
+                        ),
+                        Text('${food.rating}'),
+                      ],
+                    ),
+                    const SizedBox(
+                      width: 12.0,
+                    ),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.shopping_bag,
+                          size: 16.0,
+                        ),
+                        const SizedBox(
+                          width: 4.0,
+                        ),
+                        Text('${food.purchases}'),
+                      ],
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              _showEditPriceDialog(context, index, food.price);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () {
+              onRemove(index);
+            },
           ),
         ],
       ),
+    );
+  }
+
+  void _showEditPriceDialog(BuildContext context, int index, int currentPrice) {
+    final TextEditingController priceController = TextEditingController();
+    priceController.text = currentPrice.toString();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Harga'),
+          content: TextField(
+            controller: priceController,
+            decoration: const InputDecoration(hintText: 'Harga Baru'),
+            keyboardType: TextInputType.number,
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Batal'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Simpan'),
+              onPressed: () {
+                onEditPrice(index, int.parse(priceController.text));
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
