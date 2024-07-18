@@ -1,22 +1,16 @@
-// Package yang digunakan dalam program
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Untuk membaca file JSON
 import 'package:image_picker/image_picker.dart';
-// Akhir dari package yang digunakan
+import 'package:shared_preferences/shared_preferences.dart';
 
-// List data menu
 const List<String> list = <String>['Nama', 'Harga', 'Ulasan', 'Pembelian'];
-// Akhir dari list data menu
 
-
-// Fungsi untuk menampilkan widget
 void main() {
   runApp(const MyApp());
 }
-// Akhir dari fungsi untuk menampilkan widget
 
-
-// Widget MaterialTheme 3
-// MaterialTheme 3 adalah tema atau tampilan standar flutter
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -32,12 +26,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-// Akhir dari widget MaterialTheme 3
 
-
-// Membuat widget FoodPage
-//
-// Widget ini dibuat sebagai StatefulWidget
 class FoodPage extends StatefulWidget {
   const FoodPage({super.key});
 
@@ -45,56 +34,58 @@ class FoodPage extends StatefulWidget {
   _FoodPageState createState() => _FoodPageState();
 }
 
-// Mengatur Widget FoodPageState
-//
-// Widget ini akan memuat tampilan aplikasi
 class _FoodPageState extends State<FoodPage> {
-  // Urutan default data diatur bedasarkan nama menu
   String? selectedCategory = 'Nama';
-  // Urutan default data diatur ascending
   bool isAscending = true;
-  // Kolom pencarian data
   String searchText = '';
-  // List data yang ditampilkan
-  List<Food> foodList = [
-    Food('Ayam Bakar', 22000, 4.7, 420, 'images/ayam_bakar.jpg'),
-    Food('Ayam Penyet', 23000, 4.5, 314, 'images/ayam_cabe_ijo.jpg'),
-    Food('Ayam Geprek', 22000, 4.8, 98, 'images/ayam_geprek.jpg'),
-    Food('Bakso', 15000, 4.7, 570, 'images/bakso.jpg'),
-    Food('Es Teh Manis', 6000, 4.9, 900, 'images/es_teh_manis.jpg'),
-    Food('Ikan Bakar', 23000, 4.1, 230, 'images/ikan_bakar.jpg'),
-    Food('Jus Alpukat', 12000, 4.6, 490, 'images/jus_alpukat.jpg'),
-    Food('Jus Jeruk', 10000, 4.7, 890, 'images/jus_jeruk.jpg'),
-    Food('Kopi', 6000, 4.9, 1300, 'images/kopi.jpeg'),
-    Food('Nasi Goreng', 14000, 4.8, 1400, 'images/nasi_goreng.jpg'),
-  ];
-  // Akhir dati list data yang dtampilkan
+  List<Food> foodList = [];
 
-  // Data yang telah diurutkan atau dicari
-  List<Food> filteredFoodList = [];
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController priceController = TextEditingController();
+  final TextEditingController ratingController = TextEditingController();
+  final TextEditingController purchasesController = TextEditingController();
+  final ImagePicker picker = ImagePicker();
+  String? pickedImagePath;
 
-  // Variabel yang akan menyimpan data baru yang ditambahkan
-  final TextEditingController nameController = TextEditingController(); // Nama
-  final TextEditingController priceController = TextEditingController(); // Harga
-  final TextEditingController ratingController = TextEditingController(); // Rating
-  final TextEditingController purchasesController = TextEditingController(); // Harga
-  final ImagePicker picker = ImagePicker(); // Gambar
-  String? pickedImagePath; // Direktori gambar yang diupload
-
-  // Keadaan awal data ditampilkan / diinisialisasikan
-  // Urutan default berdasarkan nama
   @override
   void initState() {
     super.initState();
-    filteredFoodList = foodList;
-    sortFoodList();
+    loadFoodList();
   }
 
-  // Tampilan Aplikasi
+  Future<void> loadFoodList() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? foodListString = prefs.getString('foodList');
+    if (foodListString != null) {
+      List<Food> loadedList = (json.decode(foodListString) as List)
+          .map((data) => Food.fromJson(data))
+          .toList();
+      setState(() {
+        foodList = loadedList;
+        filteredFoodList = loadedList;
+        sortFoodList();
+      });
+    } else {
+      String jsonString = await rootBundle.loadString('assets/data/food_data.json');
+      List<dynamic> jsonResponse = json.decode(jsonString);
+      foodList = jsonResponse.map((data) => Food.fromJson(data)).toList();
+      saveFoodList(); // Save initial list to SharedPreferences
+      filteredFoodList = foodList;
+      sortFoodList();
+    }
+  }
+
+  Future<void> saveFoodList() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('foodList',
+        json.encode(foodList.map((food) => food.toJson()).toList()));
+  }
+
+  List<Food> filteredFoodList = [];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Appbar
       appBar: AppBar(
         backgroundColor: Colors.lightBlue,
         centerTitle: true,
@@ -104,16 +95,9 @@ class _FoodPageState extends State<FoodPage> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
-
-      // Tampilan data menu
-      // Ditampilkan dalam bentuk list
       body: ListView(
         children: <Widget>[
           const SizedBox(height: 8.0),
-
-          // Kolom pencarian
-          //
-          // Digunakan untuk mencari data makanan yang ditampilkan
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: TextField(
@@ -142,13 +126,7 @@ class _FoodPageState extends State<FoodPage> {
               ),
             ),
           ),
-          // Akhir dari kolom pencarian
-
           const SizedBox(height: 8.0),
-
-          // Kategori Menu
-          // Kategori menu berbentuk dropdown, nantinya data bisa urutkan berdasarkan kategori
-          // Terdapat kategori nama, harga, ulasan, dan banyaknya pembelian
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Row(
@@ -172,11 +150,6 @@ class _FoodPageState extends State<FoodPage> {
                     },
                   ),
                 ),
-                // Akhir dari kategori menu
-
-                // Tombol Ascending/Descending
-                // Berfungsi untuk menentukan urutan yang ditampilkan
-                // Ditampilkan secara ascending atau descending
                 IconButton(
                   icon: Icon(
                     isAscending ? Icons.arrow_upward : Icons.arrow_downward,
@@ -188,13 +161,10 @@ class _FoodPageState extends State<FoodPage> {
                     });
                   },
                 ),
-                // Akhir dari tombol ascending/descending
               ],
             ),
           ),
           const SizedBox(height: 8.0),
-
-          // Menampilkan data yang sudah diurutkan atau dicari
           Column(
             children: filteredFoodList.asMap().entries.map((entry) {
               int index = entry.key;
@@ -207,12 +177,8 @@ class _FoodPageState extends State<FoodPage> {
               );
             }).toList(),
           ),
-          // Akhir dari tampilan data
         ],
       ),
-
-      // Tombol untuk menambah data baru
-      // User dapat menambahkan data baru
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.lightBlue,
         foregroundColor: Colors.white,
@@ -221,49 +187,32 @@ class _FoodPageState extends State<FoodPage> {
         },
         child: const Icon(Icons.add),
       ),
-      // Akhir dari tombol tambah data
     );
   }
-  // Akhir dari tampilan aplikasi
 
-
-  // Fungsi untuk melakukan pencarian data
-  // Mencari data dengan metode SEQUENTIAL SEARCH
-  // User dapat melakukan pencarian data hanya BERDASARKAN NAMA menu
   void searchFoodList() {
-    // Pengkondisian
-    // Jika kolom pencarian kosong, ditampilkan data sudah ada
     if (searchText.isEmpty) {
       filteredFoodList = foodList;
-      // Jika mengetikkan huruf, maka ditampilkan data yang terdapat huruf tersebut
     } else {
       filteredFoodList = foodList
           .where((food) =>
           food.name.toLowerCase().contains(searchText.toLowerCase()))
           .toList();
     }
-    // Jika kategori tidak dipilih, ditampilkan data yang ada
     if (selectedCategory != null) {
       sortFoodList();
     }
   }
-  // Akhir dari fungsi pencarian data
 
-
-  // Fungsi untuk mengurutkan data
-  //
-  // Fungsi sortFoodList akan menampilkan data yang sudah diurutkan atau belum diurutkan
   void sortFoodList() {
     if (selectedCategory == null) return;
     setState(() {
       quickSort(
           filteredFoodList, 0, filteredFoodList.length - 1, selectedCategory!);
     });
+    saveFoodList(); // Save changes to SharedPreferences
   }
-  // Akhir dari fungsi sortFoodList
 
-  // Fungsi Quick Sort
-  // Mengurutkan data dengan metode QUICK SORT
   void quickSort(List<Food> list, int low, int high, String category) {
     if (low < high) {
       int pi = partition(list, low, high, category);
@@ -272,12 +221,10 @@ class _FoodPageState extends State<FoodPage> {
     }
   }
 
-  // Partisi array / list
   int partition(List<Food> list, int low, int high, String category) {
     Food pivot = list[high];
     int i = low - 1;
 
-    // Pengulangan untuk pengecekan setiap data
     for (int j = low; j < high; j++) {
       bool condition = false;
       if (category == 'Nama') {
@@ -298,7 +245,6 @@ class _FoodPageState extends State<FoodPage> {
             : list[j].purchases > pivot.purchases;
       }
 
-      // Pengkondisian untuk mengurutkan data
       if (condition) {
         i++;
         swap(list, i, j);
@@ -308,46 +254,40 @@ class _FoodPageState extends State<FoodPage> {
     return i + 1;
   }
 
-  // Fungsi untuk menukar posisi data
   void swap(List<Food> list, int i, int j) {
     Food temp = list[i];
     list[i] = list[j];
     list[j] = temp;
   }
-  // Akhir dari fungsi pengurutan data
 
-
-  // Fungsi untuk menambah data menu baru
-  void addFood(String name, int price, double rating, int purchases, String imagePicker) {
+  void addFood(
+      String name, int price, double rating, int purchases, String imagePicker,
+      {bool isAsset = false}) {
     setState(() {
-      foodList.add(Food(name, price, rating, purchases, imagePicker));
-      searchFoodList(); // Refresh the filtered list
+      foodList.add(
+          Food(name, price, rating, purchases, imagePicker, isAsset: isAsset));
+      searchFoodList();
+      saveFoodList();
     });
   }
-  // Akhir dari fungsi menambah data menu baru
 
-
-  // Fungsi untuk mengubah harga menu
   void editFoodPrice(int index, int newPrice) {
     setState(() {
       foodList[index].price = newPrice;
-      searchFoodList(); // Refresh the filtered list
+      searchFoodList();
+      saveFoodList();
     });
   }
-  // Akhir dari fungsi untuk mengubah harga menu
 
-  // Fungsi untuk menghapus data menu
   void removeFood(int index) {
     setState(() {
       foodList.removeAt(index);
-      searchFoodList(); // Refresh the filtered list
+      searchFoodList();
+      saveFoodList();
     });
   }
-  // Akhir dari fungsi untuk menghapus data menu
 
-
-  // Dialog Box untuk menambah data baru
-  Future<void> _showAddFoodDialog(BuildContext context) async {
+  void _showAddFoodDialog(BuildContext context) async {
     await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -378,7 +318,8 @@ class _FoodPageState extends State<FoodPage> {
                 const SizedBox(height: 12.0),
                 ElevatedButton(
                   onPressed: () async {
-                    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                    final pickedFile =
+                    await picker.pickImage(source: ImageSource.gallery);
                     if (pickedFile != null) {
                       setState(() {
                         pickedImagePath = pickedFile.path;
@@ -387,19 +328,15 @@ class _FoodPageState extends State<FoodPage> {
                   },
                   child: const Text('Pilih Gambar'),
                 ),
-
-                // Menggunakan gambar dummy jika tidak memilih gambar
                 if (pickedImagePath != null)
-                  Image.network(
-                    pickedImagePath!,
+                  Image.file(
+                    File(pickedImagePath!),
                     width: 100,
                     height: 100,
                   ),
               ],
             ),
           ),
-
-          // Validasi untuk menambah data
           actions: <Widget>[
             TextButton(
               child: const Text('Batal'),
@@ -417,6 +354,7 @@ class _FoodPageState extends State<FoodPage> {
                     double.parse(ratingController.text),
                     int.parse(purchasesController.text),
                     pickedImagePath!,
+                    isAsset: false,
                   );
                   Navigator.of(context).pop();
                   nameController.clear();
@@ -432,19 +370,65 @@ class _FoodPageState extends State<FoodPage> {
       },
     );
   }
-  // Akhir dari dialog box
+
+  void _showDeleteConfirmationDialog(BuildContext context, int index) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Hapus Data'),
+          content: const Text('Apakah Anda yakin ingin menghapus data ini?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Batal'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Hapus'),
+              onPressed: () {
+                removeFood(index);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
-// Class Food
-// Class yang digunakan untuk data makanan
 class Food {
   String name;
   int price;
   double rating;
   int purchases;
   String imagePicker;
+  bool isAsset;
 
-  Food(this.name, this.price, this.rating, this.purchases, this.imagePicker);
+  Food(this.name, this.price, this.rating, this.purchases, this.imagePicker,
+      {this.isAsset = true});
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'price': price,
+    'rating': rating,
+    'purchases': purchases,
+    'imagePicker': imagePicker,
+    'isAsset': isAsset,
+  };
+
+  factory Food.fromJson(Map<String, dynamic> json) {
+    return Food(
+      json['name'] ?? '',
+      json['price'] ?? 0,
+      json['rating'] ?? 0.0,
+      json['purchases'] ?? 0,
+      json['imagePicker'] ?? '', // Berikan nilai default jika null
+      isAsset: json['isAsset'] ?? true,
+    );
+  }
 }
 
 class FoodCard extends StatelessWidget {
@@ -459,10 +443,7 @@ class FoodCard extends StatelessWidget {
     required this.onEditPrice,
     required this.onRemove,
   });
-  // Akhir dari Class Food
 
-  // Widget Food Card
-  // untuk menampilkan menu dalam bentuk card
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -471,10 +452,23 @@ class FoodCard extends StatelessWidget {
           SizedBox(
             width: 100,
             height: 100,
-            child: Image.network(
+            child: food.imagePicker.isNotEmpty
+                ? (food.isAsset
+                ? Image.asset(
               food.imagePicker,
               fit: BoxFit.cover,
-            ),
+              errorBuilder: (context, error, stackTrace) {
+                return const Placeholder();
+              },
+            )
+                : Image.file(
+              File(food.imagePicker),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return const Placeholder();
+              },
+            ))
+                : const Placeholder(),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -506,10 +500,7 @@ class FoodCard extends StatelessWidget {
                     const SizedBox(width: 12.0),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.shopping_bag,
-                          size: 16.0,
-                        ),
+                        const Icon(Icons.shopping_bag, size: 16.0),
                         const SizedBox(width: 4.0),
                         Text('${food.purchases}'),
                       ],
@@ -534,10 +525,8 @@ class FoodCard extends StatelessWidget {
         ],
       ),
     );
-    // Akhir dari widget food card
   }
 
-  // Dialog Box untuk mengubah harga
   void _showEditPriceDialog(BuildContext context, int index, int currentPrice) {
     final TextEditingController priceController = TextEditingController();
     priceController.text = currentPrice.toString();
@@ -552,7 +541,6 @@ class FoodCard extends StatelessWidget {
             decoration: const InputDecoration(hintText: 'Harga Baru'),
             keyboardType: TextInputType.number,
           ),
-          // Validasi
           actions: <Widget>[
             TextButton(
               child: const Text('Batal'),
@@ -572,10 +560,7 @@ class FoodCard extends StatelessWidget {
       },
     );
   }
-  // Akhir dari dialog box ubah harga
 
-
-  // Validasi untuk menghapus data
   void _showDeleteConfirmationDialog(BuildContext context, int index) {
     showDialog(
       context: context,
@@ -602,5 +587,4 @@ class FoodCard extends StatelessWidget {
       },
     );
   }
-  // Akhir dari validasi untuk menghapus data
 }

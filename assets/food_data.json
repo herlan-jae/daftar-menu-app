@@ -1,0 +1,82 @@
+[
+  {
+    "name": "Ayam Bakar",
+    "price": 22000,
+    "rating": 4.7,
+    "purchases": 420,
+    "imagePicker": "assets/images/ayam_bakar.jpg",
+    "isAsset": true
+  },
+  {
+    "name": "Ayam Penyet",
+    "price": 23000,
+    "rating": 4.5,
+    "purchases": 314,
+    "imagePicker": "assets/images/ayam_cabe_ijo.jpg",
+    "isAsset": true
+  },
+  {
+    "name": "Ayam Geprek",
+    "price": 22000,
+    "rating": 4.8,
+    "purchases": 98,
+    "imagePicker": "assets/images/ayam_geprek.jpg",
+    "isAsset": true
+  },
+  {
+    "name": "Bakso",
+    "price": 15000,
+    "rating": 4.7,
+    "purchases": 570,
+    "imagePicker": "assets/images/bakso.jpg",
+    "isAsset": true
+  },
+  {
+    "name": "Es Teh Manis",
+    "price": 6000,
+    "rating": 4.9,
+    "purchases": 900,
+    "imagePicker": "assets/images/es_teh_manis.jpg",
+    "isAsset": true
+  },
+  {
+    "name": "Ikan Bakar",
+    "price": 23000,
+    "rating": 4.1,
+    "purchases": 230,
+    "imagePicker": "assets/images/ikan_bakar.jpg",
+    "isAsset": true
+  },
+  {
+    "name": "Jus Alpukat",
+    "price": 12000,
+    "rating": 4.6,
+    "purchases": 490,
+    "imagePicker": "assets/images/jus_alpukat.jpg",
+    "isAsset": true
+  },
+  {
+    "name": "Jus Jeruk",
+    "price": 10000,
+    "rating": 4.7,
+    "purchases": 890,
+    "imagePicker": "assets/images/jus_jeruk.jpg",
+    "isAsset": true
+  },
+  {
+    "name": "Kopi",
+    "price": 6000,
+    "rating": 4.9,
+    "purchases": 1300,
+    "imagePicker": "assets/images/kopi.jpeg",
+    "isAsset": true
+  },
+  {
+    "name": "Nasi Goreng",
+    "price": 14000,
+    "rating": 4.8,
+    "purchases": 1400,
+    "imagePicker": "assets/images/nasi_goreng.jpg",
+    "isAsset": true
+  }
+]

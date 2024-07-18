@@ -1,5 +1,5 @@
 name: daftar_menu
-description: "A new Flutter project."
+description: A new Flutter project.
 publish_to: "none"
 version: 0.1.0
 
@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   image_picker: ^1.1.2
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:
@@ -20,4 +21,14 @@ flutter:
   uses-material-design: true
 
   assets:
-    - images/
+    - assets/food_data.json
+    - assets/images/ayam_bakar.jpg
+    - assets/images/ayam_cabe_ijo.jpg
+    - assets/images/ayam_geprek.jpg
+    - assets/images/bakso.jpg
+    - assets/images/es_teh_manis.jpg
+    - assets/images/ikan_bakar.jpg
+    - assets/images/jus_alpukat.jpg
+    - assets/images/jus_jeruk.jpg
+    - assets/images/kopi.jpeg
+    - assets/images/nasi_goreng.jpg
