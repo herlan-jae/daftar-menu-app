@@ -1,11 +1,6 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Untuk membaca file JSON
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-const List<String> list = <String>['Nama', 'Harga', 'Ulasan', 'Pembelian'];
+import 'dart:io';
 
 void main() {
   runApp(const MyApp());
@@ -38,7 +33,23 @@ class _FoodPageState extends State<FoodPage> {
   String? selectedCategory = 'Nama';
   bool isAscending = true;
   String searchText = '';
-  List<Food> foodList = [];
+  List<Food> foodList = [
+    Food('Ayam Bakar', 22000, 4.7, 420, 'assets/images/ayam_bakar.jpg', true),
+    Food('Ayam Penyet', 23000, 4.5, 314, 'assets/images/ayam_cabe_ijo.jpg',
+        true),
+    Food('Ayam Geprek', 22000, 4.8, 98, 'assets/images/ayam_geprek.jpg', true),
+    Food('Bakso', 15000, 4.7, 570, 'assets/images/bakso.jpg', true),
+    Food(
+        'Es Teh Manis', 6000, 4.9, 900, 'assets/images/es_teh_manis.jpg', true),
+    Food('Ikan Bakar', 23000, 4.1, 230, 'assets/images/ikan_bakar.jpg', true),
+    Food('Jus Alpukat', 12000, 4.6, 490, 'assets/images/jus_alpukat.jpg', true),
+    Food('Jus Jeruk', 10000, 4.7, 890, 'assets/images/jus_jeruk.jpg', true),
+    Food('Kopi', 6000, 4.9, 1300, 'assets/images/kopi.jpeg', true),
+    Food(
+        'Nasi Goreng', 14000, 4.8, 1400, 'assets/images/nasi_goreng.jpg', true),
+  ];
+
+  List<Food> filteredFoodList = [];
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
@@ -50,38 +61,9 @@ class _FoodPageState extends State<FoodPage> {
   @override
   void initState() {
     super.initState();
-    loadFoodList();
+    filteredFoodList = foodList;
+    sortFoodList();
   }
-
-  Future<void> loadFoodList() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? foodListString = prefs.getString('foodList');
-    if (foodListString != null) {
-      List<Food> loadedList = (json.decode(foodListString) as List)
-          .map((data) => Food.fromJson(data))
-          .toList();
-      setState(() {
-        foodList = loadedList;
-        filteredFoodList = loadedList;
-        sortFoodList();
-      });
-    } else {
-      String jsonString = await rootBundle.loadString('assets/data/food_data.json');
-      List<dynamic> jsonResponse = json.decode(jsonString);
-      foodList = jsonResponse.map((data) => Food.fromJson(data)).toList();
-      saveFoodList(); // Save initial list to SharedPreferences
-      filteredFoodList = foodList;
-      sortFoodList();
-    }
-  }
-
-  Future<void> saveFoodList() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('foodList',
-        json.encode(foodList.map((food) => food.toJson()).toList()));
-  }
-
-  List<Food> filteredFoodList = [];
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +192,6 @@ class _FoodPageState extends State<FoodPage> {
       quickSort(
           filteredFoodList, 0, filteredFoodList.length - 1, selectedCategory!);
     });
-    saveFoodList(); // Save changes to SharedPreferences
   }
 
   void quickSort(List<Food> list, int low, int high, String category) {
@@ -260,14 +241,11 @@ class _FoodPageState extends State<FoodPage> {
     list[j] = temp;
   }
 
-  void addFood(
-      String name, int price, double rating, int purchases, String imagePicker,
-      {bool isAsset = false}) {
+  void addFood(String name, int price, double rating, int purchases,
+      String imagePicker) {
     setState(() {
-      foodList.add(
-          Food(name, price, rating, purchases, imagePicker, isAsset: isAsset));
+      foodList.add(Food(name, price, rating, purchases, imagePicker, false));
       searchFoodList();
-      saveFoodList();
     });
   }
 
@@ -275,7 +253,6 @@ class _FoodPageState extends State<FoodPage> {
     setState(() {
       foodList[index].price = newPrice;
       searchFoodList();
-      saveFoodList();
     });
   }
 
@@ -283,11 +260,10 @@ class _FoodPageState extends State<FoodPage> {
     setState(() {
       foodList.removeAt(index);
       searchFoodList();
-      saveFoodList();
     });
   }
 
-  void _showAddFoodDialog(BuildContext context) async {
+  Future<void> _showAddFoodDialog(BuildContext context) async {
     await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -354,7 +330,6 @@ class _FoodPageState extends State<FoodPage> {
                     double.parse(ratingController.text),
                     int.parse(purchasesController.text),
                     pickedImagePath!,
-                    isAsset: false,
                   );
                   Navigator.of(context).pop();
                   nameController.clear();
@@ -370,33 +345,6 @@ class _FoodPageState extends State<FoodPage> {
       },
     );
   }
-
-  void _showDeleteConfirmationDialog(BuildContext context, int index) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Hapus Data'),
-          content: const Text('Apakah Anda yakin ingin menghapus data ini?'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Batal'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Hapus'),
-              onPressed: () {
-                removeFood(index);
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
 
 class Food {
@@ -405,30 +353,10 @@ class Food {
   double rating;
   int purchases;
   String imagePicker;
-  bool isAsset;
+  bool isAssetImage;
 
   Food(this.name, this.price, this.rating, this.purchases, this.imagePicker,
-      {this.isAsset = true});
-
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'price': price,
-    'rating': rating,
-    'purchases': purchases,
-    'imagePicker': imagePicker,
-    'isAsset': isAsset,
-  };
-
-  factory Food.fromJson(Map<String, dynamic> json) {
-    return Food(
-      json['name'] ?? '',
-      json['price'] ?? 0,
-      json['rating'] ?? 0.0,
-      json['purchases'] ?? 0,
-      json['imagePicker'] ?? '', // Berikan nilai default jika null
-      isAsset: json['isAsset'] ?? true,
-    );
-  }
+      this.isAssetImage);
 }
 
 class FoodCard extends StatelessWidget {
@@ -452,23 +380,15 @@ class FoodCard extends StatelessWidget {
           SizedBox(
             width: 100,
             height: 100,
-            child: food.imagePicker.isNotEmpty
-                ? (food.isAsset
+            child: food.isAssetImage
                 ? Image.asset(
               food.imagePicker,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return const Placeholder();
-              },
             )
                 : Image.file(
               File(food.imagePicker),
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return const Placeholder();
-              },
-            ))
-                : const Placeholder(),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -566,8 +486,8 @@ class FoodCard extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Hapus Data'),
-          content: const Text('Apakah Anda yakin ingin menghapus data ini?'),
+          title: const Text('Hapus Menu'),
+          content: const Text('Yakin mau hapus menu ini?'),
           actions: <Widget>[
             TextButton(
               child: const Text('Batal'),
@@ -588,3 +508,5 @@ class FoodCard extends StatelessWidget {
     );
   }
 }
+
+const List<String> list = <String>['Nama', 'Harga', 'Ulasan', 'Pembelian'];
